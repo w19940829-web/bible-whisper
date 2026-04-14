@@ -1,0 +1,19 @@
+{
+  "name": "Bible Whisper 靈修聖經",
+  "short_name": "Bible Whisper",
+  "description": "新標點和合本・神版 靈修聖經閱讀 App，支援逐節筆記、閱讀追蹤、完全離線",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF6EF",
+  "theme_color": "#C9922A",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

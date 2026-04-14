@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Bible Whisper 靈修聖經</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Bible Whisper — 新標點和合本靈修聖經，逐節筆記・閱讀追蹤・完全離線">
+  <meta name="theme-color" content="#C9922A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-container">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 首頁                                       -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="view active" id="view-home">
+    <header class="app-header">
+      <div class="logo-text">Bible Whisper</div>
+      <div style="display:flex; gap:8px;">
+        <button class="icon-btn" onclick="openAppSettings()" aria-label="設定與備份">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-theme-toggle" onclick="toggleTheme()" aria-label="切換主題">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="home-content">
+      <!-- Daily Verse Hero Card -->
+      <div class="daily-verse-card" id="daily-verse-card" onclick="openBibleToVerse()">
+        <div class="dvc-label">今日靈修經文</div>
+        <div class="dvc-verse" id="dvc-verse-text">耶和華是我的牧者，我必不至缺乏。</div>
+        <div class="dvc-ref" id="dvc-verse-ref">詩篇 23:1</div>
+      </div>
+
+      <!-- Global Search -->
+      <div class="search-container" style="margin: 16px 0;">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="search" id="global-search-input" class="modern-input" placeholder="🔍 搜尋經文關鍵字..." style="flex:1;" onkeydown="if(event.key==='Enter')bibleGlobalSearch()">
+          <button class="cta-btn secondary" style="width:auto; padding:0 16px;" onclick="bibleGlobalSearch()">搜尋</button>
+        </div>
+        <div id="search-filter-tabs" style="display:flex; gap:8px; margin-bottom:16px;">
+          <button class="bible-bottom-tab active" onclick="setSearchFilter('all')">全本</button>
+          <button class="bible-bottom-tab" onclick="setSearchFilter('ot')">舊約</button>
+          <button class="bible-bottom-tab" onclick="setSearchFilter('nt')">新約</button>
+        </div>
+        <div id="global-search-results" class="global-search-results"></div>
+      </div>
+
+      <!-- Streak Badge -->
+      <div class="home-meta">
+        <div class="streak-badge" id="streak-badge" style="display:none;">
+          <span class="streak-fire">🔥</span>
+          <span id="streak-count-label">連續靈修 0 天</span>
+        </div>
+      </div>
+
+      <!-- Continue Reading -->
+      <div class="continue-card" id="continue-card" style="display:none;" onclick="openBibleContinue()">
+        <div class="continue-label">📌 繼續閱讀</div>
+        <div class="continue-info" id="continue-info">上次讀到...</div>
+        <div class="continue-arrow">→</div>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="home-cta">
+        <button class="cta-btn primary" onclick="openBible()" id="btn-open-bible">
+          <span class="cta-icon">📖</span>
+          <span>開始閱讀</span>
+        </button>
+        <button class="cta-btn secondary" onclick="openNotesOverview()" id="btn-open-notes">
+          <span class="cta-icon">📝</span>
+          <span>靈修筆記</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- 聖經閱讀器                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="view" id="view-bible">
+
+    <!-- Header -->
+    <div class="bible-header" id="bible-header">
+      <button class="bible-back-btn" onclick="bibileNavBack()" id="bible-back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+        <span id="bible-back-label">返回</span>
+      </button>
+      <div class="bible-nav-info" id="bible-nav-info"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="bible-loading" class="bible-loading" style="display:none;">
+      <div class="loading-spinner"></div>
+      <p>載入聖經資料中...</p>
+    </div>
+
+    <!-- Content Area -->
+    <div class="bible-content-area" id="bible-scroll-area">
+
+      <!-- ① 書卷選擇器 -->
+      <div id="bible-book-picker">
+
+        <!-- Stats / Bookmark Banner -->
+        <div id="bible-bookmark-banner" class="bible-banner" style="display:none;"></div>
+
+        <!-- Tabs: 書卷 | 我的筆記 -->
+        <div class="bible-picker-tabs">
+          <button class="bible-picker-tab active" id="bible-picker-tab-books" onclick="bibleShowBookPicker()">書卷</button>
+          <button class="bible-picker-tab" id="bible-picker-tab-notes" onclick="bibleShowNotesOverview()">我的筆記</button>
+        </div>
+
+        <!-- Book Lists (visible when tab=書卷) -->
+        <div id="bible-book-lists">
+          <!-- Search -->
+          <div class="bible-search-bar">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="bible-search-input" id="bible-search-input" type="search" placeholder="搜尋書卷或經文..." oninput="bibleSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="search-clear-btn" id="search-clear-btn" onclick="clearBibleSearch()" style="display:none;" aria-label="清除搜尋">✕</button>
+          </div>
+          <!-- Search Results (hidden until query) -->
+          <div id="bible-search-results" class="bible-search-results" style="display:none;"></div>
+
+          <!-- Testament Tabs -->
+          <div class="testament-tabs" id="testament-tabs">
+            <button class="testament-tab active" id="tab-ot" onclick="switchTestamentTab('ot')">舊約 <span>39卷</span></button>
+            <button class="testament-tab" id="tab-nt" onclick="switchTestamentTab('nt')">新約 <span>27卷</span></button>
+          </div>
+
+          <!-- Book Grids -->
+          <div id="bible-ot-grid" class="bible-book-grid"></div>
+          <div id="bible-nt-grid" class="bible-book-grid" style="display:none;"></div>
+        </div>
+
+        <!-- Notes Overview (visible when tab=我的筆記) -->
+        <div id="bible-notes-overview" style="display:none;">
+          <div class="bible-search-bar" style="margin-bottom:14px;">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="bible-search-input" id="bible-notes-search" type="search" placeholder="搜尋筆記內容..." oninput="bibleFilterNotes()" autocomplete="off">
+          </div>
+          <div id="bible-notes-overview-list"></div>
+        </div>
+      </div>
+
+      <!-- ② 章節選擇器 -->
+      <div id="bible-chapter-picker" style="display:none;">
+        <h2 class="bible-chapter-picker-title" id="bible-chapter-title"></h2>
+        <div id="bible-chapter-grid" class="bible-chapter-grid"></div>
+      </div>
+
+      <!-- ③ 閱讀器 -->
+      <div id="bible-reader" style="display:none;">
+        <p id="bible-reader-heading" class="bible-reader-heading-text"></p>
+        <div id="bible-verse-list" class="bible-verse-list"></div>
+        <!-- Chapter Nav (bottom of content) -->
+        <div class="bible-chapter-nav-inline">
+          <button id="bible-prev-btn" class="chapter-nav-btn" onclick="bibleGoPrevChapter()" style="display:none;">← 上一章</button>
+          <div style="flex:1;"></div>
+          <button id="bible-next-btn" class="chapter-nav-btn" onclick="bibleGoNextChapter()" style="display:none;">下一章 →</button>
+        </div>
+      </div>
+
+    </div><!-- /bible-content-area -->
+
+    <!-- TTS Control Bar (shown when playing) -->
+    <div class="tts-control-bar" id="tts-control-bar" style="display:none;" role="region" aria-label="語音朗讀控制">
+      <div class="tts-info">
+        <div class="tts-indicator" aria-hidden="true">
+          <span class="tts-wave"></span>
+          <span class="tts-wave"></span>
+          <span class="tts-wave"></span>
+        </div>
+        <span class="tts-book-ref" id="tts-book-ref"></span>
+        <span class="tts-verse-ref" id="tts-verse-ref"></span>
+      </div>
+      <div class="tts-main-controls">
+        <button class="tts-ctrl-btn" onclick="ttsPrevVerse()" title="上一節" aria-label="上一節">⏮</button>
+        <button class="tts-ctrl-btn tts-play-pause" id="tts-play-btn" onclick="ttsToggle()" title="暫停" aria-label="暫停朗讀">⏸</button>
+        <button class="tts-ctrl-btn" onclick="ttsNextVerse()" title="下一節" aria-label="下一節">⏭</button>
+        <button class="tts-ctrl-btn tts-stop-btn" onclick="ttsStop()" title="停止" aria-label="停止朗讀">■</button>
+      </div>
+      <div class="tts-speed-bar">
+        <button class="tts-speed-btn" data-rate="0.75" onclick="ttsSetRate(0.75)">慢速</button>
+        <button class="tts-speed-btn active" data-rate="1" onclick="ttsSetRate(1)">正常</button>
+        <button class="tts-speed-btn" data-rate="1.25" onclick="ttsSetRate(1.25)">快速</button>
+        <button class="tts-speed-btn" data-rate="1.5" onclick="ttsSetRate(1.5)">極快</button>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Toolbar (reader only) -->
+    <div class="bible-reader-toolbar" id="bible-reader-toolbar" style="display:none;">
+      <!-- TTS Button -->
+      <button class="toolbar-btn" id="tts-toolbar-btn" onclick="ttsStart(0)" title="語音朗讀" aria-label="語音朗讀">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19 11,5"/><path d="M15.54,8.46a5,5,0,0,1,0,7.07"/><path d="M19.07,4.93a10,10,0,0,1,0,14.14"/></svg>
+        <span>朗讀</span>
+      </button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" onclick="toggleBibleBottomSheet()" title="筆記抽屜">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>筆記</span>
+      </button>
+      <button class="toolbar-btn" onclick="bibleFontChange(-1)" title="縮小字體">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="2" y="16" font-size="13" fill="currentColor" stroke="none" font-family="serif">A</text><line x1="14" y1="12" x2="22" y2="12"/></svg>
+        <span>A－</span>
+      </button>
+      <button class="toolbar-btn" onclick="bibleFontChange(1)" title="放大字體">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="1" y="18" font-size="18" fill="currentColor" stroke="none" font-family="serif">A</text><line x1="16" y1="9" x2="22" y2="9"/><line x1="19" y1="6" x2="19" y2="12"/></svg>
+        <span>A＋</span>
+      </button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" id="toolbar-prev-btn" onclick="bibleGoPrevChapter()" title="上一章">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+        <span>上章</span>
+      </button>
+      <button class="toolbar-btn" id="toolbar-next-btn" onclick="bibleGoNextChapter()" title="下一章">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+        <span>下章</span>
+      </button>
+    </div>
+
+    <!-- Details / XRef Bottom Sheet -->
+    <div id="bible-bottom-sheet" class="bible-bottom-sheet">
+      <div class="bible-bottom-handle" onclick="_closeBibleBottomSheet()"></div>
+      <div class="bible-bottom-tabs">
+        <button class="bible-bottom-tab active" id="tab-chapter" onclick="switchBottomTab('chapter')">本章筆記</button>
+        <button class="bible-bottom-tab" id="tab-recent" onclick="switchBottomTab('recent')">最近筆記</button>
+        <button class="bible-bottom-tab" id="tab-xref" onclick="switchBottomTab('xref')" style="display:none;">🔗 歷史關聯</button>
+      </div>
+      <div class="bible-bottom-content" id="bottom-sheet-content"></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- Stats Edit Modal                           -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-bible-stats" onclick="closeBibleStatsEdit(event)">
+    <div class="modal-content">
+      <h3 class="modal-title">✏️ 修改進度紀錄</h3>
+      <p class="modal-desc">自由調整統計數據。</p>
+      <label class="form-label">🔥 連續靈修天數</label>
+      <input type="number" id="edit-streak-count" class="modern-input" min="0">
+      <label class="form-label" style="margin-top:16px;">📚 額外紙本已讀章數</label>
+      <input type="number" id="edit-paper-chapters" class="modern-input" min="0">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="document.getElementById('modal-bible-stats').classList.remove('active')">取消</button>
+        <button class="btn-save" onclick="saveBibleStatsEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- App Settings & Backup Modal                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-app-settings" onclick="closeAppSettings(event)">
+    <div class="modal-content">
+      <h3 class="modal-title">⚙️ 設定與備份</h3>
+      <p class="modal-desc">妥善保管您的筆記與自訂閱讀體驗。</p>
+      
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Font Selection -->
+        <div style="margin-bottom:12px;">
+          <label class="form-label" style="display:block; margin-bottom:8px;">字體選擇</label>
+          <div style="display:flex; gap:8px;">
+            <button class="settings-font-btn settings-font-serif active" id="font-btn-serif" onclick="bibleSetFontFamily('serif')">明體</button>
+            <button class="settings-font-btn settings-font-sans" id="font-btn-sans" onclick="bibleSetFontFamily('sans')">黑體</button>
+            <button class="settings-font-btn settings-font-kaiti" id="font-btn-kaiti" onclick="bibleSetFontFamily('kaiti')">楷體</button>
+          </div>
+        </div>
+
+        <button class="modern-input" style="text-align:left; cursor:pointer;" onclick="exportBibleData()">
+          📥 匯出資料備份 (.json)
+        </button>
+        
+        <button class="modern-input" style="text-align:left; cursor:pointer; position:relative;">
+          📤 匯入資料還原
+          <input type="file" id="import-file-input" accept=".json" style="position:absolute; inset:0; opacity:0; cursor:pointer;" onchange="importBibleData(event)">
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-save" onclick="document.getElementById('modal-app-settings').classList.remove('active')">完成</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-container -->
+
+<script src="idb-helper.js"></script>
+<script src="app.js"></script>
+<script src="bible-reader.js"></script>
+<script src="bible-tts.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+</script>
+</body>
+</html>
