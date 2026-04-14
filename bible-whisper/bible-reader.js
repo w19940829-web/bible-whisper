@@ -523,12 +523,23 @@ function renderBottomSheetNotes(tab) {
       return;
     }
     const refs = window._bwXrefData[window._activeXrefKey];
-    container.innerHTML = refs.map(r => `
+    container.innerHTML = refs.map(r => {
+      let coord = null;
+      const m = r.ref.match(/^([^\s\d]+(?:\s[^\s\d]+)?)\s*(\d+)[：:](\d+)/);
+      if (m && bibleData) {
+        const bName = m[1].replace(/\s/g, '');
+        const cIdx = parseInt(m[2]) - 1;
+        const vIdx = parseInt(m[3]) - 1;
+        const idx = bibleData.findIndex(b => b.name === bName || b.abbrev === bName || b.name.replace(/\s/g, '') === bName);
+        if (idx >= 0) coord = { bookIdx: idx, chapterIdx: cIdx, verseIdx: vIdx };
+      }
+      return `
       <div class="xref-item">
         <div class="xref-item-ref">🔗 ${r.ref}</div>
         <div class="xref-item-text">${r.text}</div>
-      </div>
-    `).join('');
+        ${coord ? `<button class="bottom-note-jump" style="margin-top:8px" onclick="bibleJumpToVerse(${coord.bookIdx},${coord.chapterIdx},${coord.verseIdx})">↑ 跳到這節</button>` : ''}
+      </div>`;
+    }).join('');
   }
 }
 

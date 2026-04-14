@@ -2,7 +2,7 @@
 /* === Bible Whisper — Service Worker (Cache-First)          === */
 /* ============================================================ */
 
-const CACHE_NAME = 'bible-whisper-v5';
+const CACHE_NAME = 'bible-whisper-v6';
 
 const PRECACHE_ASSETS = [
   './',

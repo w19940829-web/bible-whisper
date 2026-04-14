@@ -12,9 +12,8 @@ const BibleTTS = {
   currentVerse:   -1,
   rate:           parseFloat(localStorage.getItem('hw_tts_rate') || '1'),
   _autoAdvancing: false,  // flag: TTS is navigating to next chapter, don't stop
-  _utterance:     null,
-  _iosWakeTimer:  null,   // timer to prevent iOS 15s auto-cancel
   _currentVerses: null,   // store verses fetched from IDB
+  _queuedUntil:   0,      // next verse index to enqueue
 
   /* ── 初始化：載入系統語音清單 ── */
   init() {
@@ -66,29 +65,42 @@ const BibleTTS = {
     _ttsShowControlBar(true);
     _ttsUpdateToolbarBtn();
     
-    // 清除舊高亮，改為為整個 List 加上朗讀狀態
+    // 清除舊高亮，準備逐節高亮
     _ttsClearHighlight();
     const list = document.getElementById('bible-verse-list');
-    if (list) list.classList.add('tts-playing');
+    if (list) list.classList.remove('tts-playing'); // Fallback remove class
     
-    this._speakChapter(fromVerse);
+    this._startQueuedReading(fromVerse);
   },
 
-  /* ── 全章朗讀 ── */
-  _speakChapter(startIdx) {
+  /* ── 預先佇列朗讀邏輯 ── */
+  _startQueuedReading(startIdx) {
     if (!this.isPlaying || !this._currentVerses) return;
-
+    this._queuedUntil = startIdx;
+    
+    // 如果直接點到超出版圖，或該章為空
     if (startIdx >= this._currentVerses.length) {
       this._onChapterEnd();
       return;
     }
-
-    this.currentVerse = startIdx;
-    _ttsUpdateControlRef();
-
-    // 合併剩餘經文成一長串字串
-    const textToSpeak = this._currentVerses.slice(startIdx).join('。');
     
+    this._fillQueue();
+  },
+
+  /* 維持緩衝區有後續兩節準備好的機制 */
+  _fillQueue() {
+    if (!this.isPlaying || !this.synth) return;
+    
+    // 讓瀏覽器引擎隨時保有至少 2 個即將播放的 Utterance，實現無縫接軌
+    // 且又能避開長達 15 秒單句造成的 iOS cut-off bug
+    while (this.synth.pending < 2 && this._queuedUntil < this._currentVerses.length) {
+      this._enqueueVerse(this._queuedUntil);
+      this._queuedUntil++;
+    }
+  },
+
+  _enqueueVerse(idx) {
+    const textToSpeak = this._currentVerses[idx];
     const utt = new SpeechSynthesisUtterance(textToSpeak);
     if (this.zhVoice) utt.voice = this.zhVoice;
     utt.lang  = 'zh-TW';
@@ -96,32 +108,32 @@ const BibleTTS = {
     utt.pitch = 1.0;
 
     utt.onstart = () => {
+      // 當這一節開始播放時，更新 UI 並高亮
+      this.currentVerse = idx;
+      _ttsHighlightVerse(idx);
       _ttsUpdateControlRef();
-      // 防治 iOS 15秒自動中斷 Bug: 每 10 秒微暫停並繼續
-      if (this._iosWakeTimer) clearInterval(this._iosWakeTimer);
-      this._iosWakeTimer = setInterval(() => {
-        if (this.synth && this.isPlaying && !this.isPaused) {
-          this.synth.pause();
-          setTimeout(() => this.synth.resume(), 10);
-        }
-      }, 10000);
+      
+      // 補充佇列
+      if (this.isPlaying && !this.isPaused) {
+        this._fillQueue();
+      }
     };
 
     utt.onend = () => {
-      if (this.isPlaying && !this.isPaused && !this._autoAdvancing) {
-        if (this._iosWakeTimer) clearInterval(this._iosWakeTimer);
+      // 如果播到了最後一節，就觸發換章
+      if (idx === this._currentVerses.length - 1 && this.isPlaying && !this.isPaused && !this._autoAdvancing) {
         this._onChapterEnd();
+      } else if (this.isPlaying && !this.isPaused) {
+        this._fillQueue();
       }
     };
 
     utt.onerror = (e) => {
-      // 'interrupted' / 'canceled' = 正常中斷
       if (e.error === 'interrupted' || e.error === 'canceled') return;
       console.warn('[TTS] Error:', e.error, e.utterance?.text?.slice(0, 30));
       this.stop();
     };
 
-    this._utterance = utt;
     this.synth.speak(utt);
   },
 
@@ -169,13 +181,12 @@ const BibleTTS = {
 
   /* ── 停止 ── */
   stop() {
-    if (this._iosWakeTimer) clearInterval(this._iosWakeTimer);
     if (this.synth) this.synth.cancel();
     this.isPlaying      = false;
     this.isPaused       = false;
     this._autoAdvancing = false;
     this.currentVerse   = -1;
-    this._utterance     = null;
+    this._queuedUntil   = 0;
     _ttsShowControlBar(false);
     _ttsUpdateToolbarBtn();
     _ttsClearHighlight();
@@ -186,7 +197,7 @@ const BibleTTS = {
     if (!this._currentVerses) return;
     const clamped = Math.max(0, Math.min(idx, this._currentVerses.length - 1));
     if (this.synth) this.synth.cancel();
-    setTimeout(() => this._speakChapter(clamped), 80);
+    setTimeout(() => this._startQueuedReading(clamped), 80);
   },
 
   /* ── 速度設定 ── */
@@ -198,7 +209,7 @@ const BibleTTS = {
     if (this.isPlaying) {
       const cur = this.currentVerse;
       if (this.synth) this.synth.cancel();
-      setTimeout(() => this._speakChapter(cur), 80);
+      setTimeout(() => this._startQueuedReading(cur), 80);
     }
   }
 };
@@ -273,7 +284,7 @@ function _ttsUpdateControlRef() {
   const verseEl = document.getElementById('tts-verse-ref');
   const total   = BibleTTS._currentVerses.length;
   if (bookEl)  bookEl.textContent  = `${bibleData[bibleCurrentBook].name} ${bibleCurrentChapter + 1}`;
-  if (verseEl) verseEl.textContent = `全章連播 (從第 ${BibleTTS.currentVerse + 1} 節開始)`;
+  if (verseEl) verseEl.textContent = `第 ${BibleTTS.currentVerse + 1} 節 / 共 ${total} 節`;
 }
 
 function _ttsHighlightVerse(idx) {
