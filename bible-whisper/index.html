@@ -46,7 +46,7 @@
       <div class="search-container" style="margin: 16px 0;">
         <div style="display:flex; gap:8px; margin-bottom:12px;">
           <input type="search" id="global-search-input" class="modern-input" placeholder="🔍 搜尋經文關鍵字..." style="flex:1;" onkeydown="if(event.key==='Enter')bibleGlobalSearch()">
-          <button class="cta-btn secondary" style="width:auto; padding:0 16px;" onclick="bibleGlobalSearch()">搜尋</button>
+          <button class="cta-btn secondary" style="width:auto; padding:0 16px; justify-content:center; flex-direction:row;" onclick="bibleGlobalSearch()">搜尋</button>
         </div>
         <div id="search-filter-tabs" style="display:flex; gap:8px; margin-bottom:16px;">
           <button class="bible-bottom-tab active" onclick="setSearchFilter('all')">全本</button>
@@ -252,8 +252,8 @@
       <p class="modal-desc">自由調整統計數據。</p>
       <label class="form-label">🔥 連續靈修天數</label>
       <input type="number" id="edit-streak-count" class="modern-input" min="0">
-      <label class="form-label" style="margin-top:16px;">📚 額外紙本已讀章數</label>
-      <input type="number" id="edit-paper-chapters" class="modern-input" min="0">
+      <label class="form-label" style="margin-top:16px;">📚 今年總已讀章數</label>
+      <input type="number" id="edit-yearly-reads" class="modern-input" min="0">
       <div class="modal-actions">
         <button class="btn-cancel" onclick="document.getElementById('modal-bible-stats').classList.remove('active')">取消</button>
         <button class="btn-save" onclick="saveBibleStatsEdit()">儲存</button>

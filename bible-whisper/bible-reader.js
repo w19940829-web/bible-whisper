@@ -137,17 +137,15 @@ function _bibleRenderBookPicker() {
   const banner = document.getElementById('bible-bookmark-banner');
 
   if (banner) {
-    const paperCount = getBiblePaperChapters();
-    const readLog    = getBibleReadLog();
     const currentYear = new Date().getFullYear().toString();
-    const yearlyReads = Object.keys(readLog)
-      .filter(k => k.indexOf('_') > 0 && readLog[k].startsWith(currentYear)).length + paperCount;
+    const paperCount = getBiblePaperChapters();
+    const yearlyReads = paperCount; // now it's purely manual via the field
 
     let html = '<div style="display:flex;justify-content:space-between;align-items:center;width:100%;">';
-    if (count > 0) {
+    if (count > 0 && streak.lastDate === new Date().toDateString()) {
       html += `<div style="font-weight:700;color:var(--accent-gold);font-size:0.95rem;">🔥 連續靈修 ${count} 天</div>`;
     } else {
-      html += '<div></div>';
+      html += `<button class="bible-continue-btn" style="background:var(--accent-gold); color:white; border:none;" onclick="bibleCheckInStreak()">📍 今日打卡</button>`;
     }
     html += `<div class="bible-year-stats">📖 今年已讀 ${yearlyReads} 章 <button class="bible-edit-stats-btn" onclick="openBibleStatsEdit()" title="修改進度">✏️</button></div>`;
     html += '</div>';
@@ -318,7 +316,7 @@ function bibleGoPrevChapter() {
 }
 function bibleGoNextChapter() {
   if (bibleCurrentBook >= 0 &&
-      bibleCurrentChapter < bibleData[bibleCurrentBook].chapters.length - 1) {
+      bibleCurrentChapter < (bibleData[bibleCurrentBook].chapterCount || 0) - 1) {
     _bibleSelectChapter(bibleCurrentChapter + 1);
   }
 }
@@ -348,13 +346,7 @@ function bibleSetBookmark(verseIdx) {
     }
   });
 
-  /* Record chapter as read */
-  const readLog = getBibleReadLog();
-  const logKey  = `${bibleCurrentBook}_${bibleCurrentChapter}`;
-  if (!readLog[logKey]) {
-    readLog[logKey] = new Date().toISOString();
-    saveBibleReadLog(readLog);
-  }
+  /* Record chapter as read - removed as per pure manual requirement */
 
   _updateBibleStreak();
   if (typeof renderTimeline === 'function') renderTimeline();
@@ -697,7 +689,7 @@ function bibleSearch() {
 }
 
 /* ─── Streak ──────────────────────────────────────────────── */
-function _updateBibleStreak() {
+function bibleCheckInStreak() {
   const today = new Date().toDateString();
   const streak = getBibleStreak();
   if (streak.lastDate !== today) {
@@ -705,7 +697,13 @@ function _updateBibleStreak() {
     streak.count = streak.lastDate === yesterday ? (streak.count || 0) + 1 : 1;
     streak.lastDate = today;
     saveBibleStreak(streak);
+    showToast(`📍 打卡成功！連續靈修 ${streak.count} 天`);
+    _bibleRenderBookPicker();
   }
+}
+
+function _updateBibleStreak() {
+  // automatic update removed, now uses explicit check-in
   updateDashboard();
 }
 
@@ -743,7 +741,7 @@ function getDailyVerseForHome() {
 /* ─── Stats Modal ─────────────────────────────────────────── */
 function openBibleStatsEdit() {
   document.getElementById('edit-streak-count').value   = getBibleStreakCount();
-  document.getElementById('edit-paper-chapters').value = getBiblePaperChapters();
+  document.getElementById('edit-yearly-reads').value = getBiblePaperChapters();
   document.getElementById('modal-bible-stats').classList.add('active');
 }
 
@@ -756,7 +754,7 @@ function closeBibleStatsEdit(e) {
 
 function saveBibleStatsEdit() {
   const newStreak = parseInt(document.getElementById('edit-streak-count').value || '0');
-  const newPaper  = parseInt(document.getElementById('edit-paper-chapters').value || '0');
+  const newPaper  = parseInt(document.getElementById('edit-yearly-reads').value || '0');
 
   const streak = getBibleStreak();
   streak.count = newStreak;

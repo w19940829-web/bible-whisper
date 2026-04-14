@@ -33,15 +33,23 @@ function switchView(viewId) {
 function updateDashboard() {
   // Streak badge
   if (typeof getBibleStreakCount === 'function') {
-    const count = getBibleStreakCount();
+    const streak = getBibleStreak();
+    const count = streak.count || 0;
     const badge = document.getElementById('streak-badge');
     const label = document.getElementById('streak-count-label');
+    
     if (badge && label) {
-      if (count > 0) {
-        badge.style.display = 'flex';
+      badge.style.display = 'flex';
+      if (count > 0 && streak.lastDate === new Date().toDateString()) {
         label.textContent = `連續靈修 ${count} 天`;
+        badge.onclick = null;
+        badge.style.cursor = 'default';
+        badge.style.background = 'var(--bg-secondary)'; // normal style
       } else {
-        badge.style.display = 'none';
+        label.innerHTML = `📍 今日尚未打卡`;
+        badge.onclick = () => { if (typeof bibleCheckInStreak === 'function') bibleCheckInStreak(); };
+        badge.style.cursor = 'pointer';
+        badge.style.background = 'var(--accent-gold-light, #ffe6cc)';
       }
     }
   }
