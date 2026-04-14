@@ -306,6 +306,38 @@ function importBibleData(event) {
   reader.readAsText(file);
 }
 
+function repairBibleDatabase() {
+  if (!confirm('即將清除並重新下載聖經資料庫。此操作不會刪除您的個人筆記與進度，確定要繼續嗎？')) return;
+  
+  showToast('正在清除快取與資料庫...');
+  
+  // Clear IDB
+  const dbDeleteReq = indexedDB.deleteDatabase('BibleWhisperDB');
+  
+  dbDeleteReq.onsuccess = dbDeleteReq.onerror = () => {
+    // Unregister SW
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    
+    // Clear caches
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+    
+    showToast('清除完成，正在重新載入...');
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 1500);
+  };
+}
+
 function bibleSetFontFamily(font) {
   const root = document.documentElement;
   if (font === 'sans') root.style.setProperty('--font-serif', 'var(--font-sans)');

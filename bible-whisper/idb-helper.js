@@ -3,7 +3,7 @@
 /* ============================================================ */
 
 const DB_NAME = 'BibleWhisperDB';
-const DB_VERSION = 2; // Bump version for fresh schema
+const DB_VERSION = 3; // Bump to force re-init with fixed schema
 let _bwDbInstance = null;
 
 function initIDB() {
@@ -13,12 +13,11 @@ function initIDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = e => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains('metadata')) {
-        db.createObjectStore('metadata');
-      }
-      if (!db.objectStoreNames.contains('chapters')) {
-        db.createObjectStore('chapters');
-      }
+      // Clear old stores on upgrade to purge broken data
+      if (db.objectStoreNames.contains('metadata')) db.deleteObjectStore('metadata');
+      if (db.objectStoreNames.contains('chapters')) db.deleteObjectStore('chapters');
+      db.createObjectStore('metadata');
+      db.createObjectStore('chapters');
     };
 
     req.onsuccess = e => {
@@ -65,7 +64,7 @@ async function idbPopulateBible(bibleJson) {
   const bookHeaders = bibleJson.map(b => ({
     name: b.name,
     abbrev: b.abbrev,
-    chapters: new Array(b.chapters.length) // placeholder array to maintain .chapters.length compatibility
+    chapterCount: b.chapters.length
   }));
 
   await idbSetMeta('books', bookHeaders);

@@ -185,7 +185,7 @@ function _bibleRenderBookPicker() {
   ntGrid.innerHTML = '';
 
   bibleData.forEach((book, idx) => {
-    const totalChapters = book.chapters.length;
+    const totalChapters = book.chapterCount || 0;
     const readCount     = Object.keys(readLog).filter(k => k.startsWith(idx + '_')).length;
     const noteCount     = Object.keys(notes).filter(k => k.startsWith(book.name + '_')).length;
 
@@ -224,14 +224,15 @@ function _bibleSelectBook(bookIdx) {
   if (!grid) return;
   grid.innerHTML = '';
 
-  book.chapters.forEach((_, idx) => {
+  const chapCount = book.chapterCount || 0;
+  for (let idx = 0; idx < chapCount; idx++) {
     const btn = document.createElement('button');
     btn.className = 'bible-chapter-btn';
     if (readLog[`${bookIdx}_${idx}`]) btn.classList.add('read');
     btn.textContent = idx + 1;
     btn.onclick = () => _bibleSelectChapter(idx);
     grid.appendChild(btn);
-  });
+  }
 
   _bibleShowPickerState('chapters');
 }
@@ -241,6 +242,12 @@ async function _bibleSelectChapter(chapterIdx) {
   bibleCurrentChapter = chapterIdx;
   const book   = bibleData[bibleCurrentBook];
   const verses = await idbGetChapter(bibleCurrentBook, chapterIdx); // IDB!
+  
+  if (!verses) {
+    showToast('⚠️ 經文讀取失敗，請重新啟動 App 進行修復');
+    return;
+  }
+  
   const notes  = getBibleNotes();
 
   /* Update heading */
@@ -297,7 +304,7 @@ async function _bibleSelectChapter(chapterIdx) {
   const prevBtn = document.getElementById('bible-prev-btn');
   const nextBtn = document.getElementById('bible-next-btn');
   if (prevBtn) prevBtn.style.display = chapterIdx > 0 ? 'block' : 'none';
-  if (nextBtn) nextBtn.style.display = chapterIdx < book.chapters.length - 1 ? 'block' : 'none';
+  if (nextBtn) nextBtn.style.display = chapterIdx < (book.chapterCount || 0) - 1 ? 'block' : 'none';
 
   _bibleShowPickerState('reader');
   _bibleChapterStartTime = Date.now();
@@ -330,9 +337,16 @@ function bibleSetBookmark(verseIdx) {
     chapterIdx: bibleCurrentChapter,
     verseIdx,
     bookName: book.name,
-    verseText: book.chapters[bibleCurrentChapter][verseIdx]
+    verseText: '' // verse text loaded on demand from IDB
   };
   saveBibleBookmark(bm);
+  // Async update bookmark verseText from IDB
+  idbGetChapter(bibleCurrentBook, bibleCurrentChapter).then(verses => {
+    if (verses && verses[verseIdx]) {
+      bm.verseText = verses[verseIdx];
+      saveBibleBookmark(bm);
+    }
+  });
 
   /* Record chapter as read */
   const readLog = getBibleReadLog();
@@ -660,15 +674,10 @@ function bibleSearch() {
 
   resultsEl.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem;padding:12px 14px;">搜尋中...</p>';
 
-  setTimeout(() => {
-    const results = [];
-    bibleData.forEach((book, bIdx) => {
-      book.chapters.forEach((chapter, cIdx) => {
-        chapter.forEach((verse, vIdx) => {
-          if (verse.includes(query)) results.push({ bookIdx: bIdx, chapterIdx: cIdx, verseIdx: vIdx, bookName: book.name, verse });
-        });
-      });
-    });
+  // Use IDB global search instead of iterating in-memory
+  idbSearchGlobal(query, 'all').then(results => {
+    // Enrich with book names
+    results.forEach(r => { r.bookName = bibleData[r.bookIdx]?.name || ''; r.verse = r.text; });
 
     if (results.length === 0) {
       resultsEl.innerHTML = `<p class="bible-empty-state" style="padding:20px;">找不到「${query}」的相關經文</p>`;
@@ -684,7 +693,7 @@ function bibleSearch() {
           <div class="bible-search-verse">${highlighted}</div>
         </div>`;
       }).join('');
-  }, 50);
+  });
 }
 
 /* ─── Streak ──────────────────────────────────────────────── */
